@@ -63,12 +63,12 @@ function moveHandler(){
 }
 
 function handleRaycaster(){
-    const pointer = new THREE.Vector2();
-    pointer.x = 0.5 * 2 - 1;
-	pointer.y = -1 * 0.5 * 2 + 1;
-    raycaster.setFromCamera(pointer,camera);
-    const intersects = raycaster.intersectObjects(playerMeshes,true);
-    console.log(intersects);
+    // const pointer = new THREE.Vector2();
+    // pointer.x = 0.5 * 2 - 1;
+	// pointer.y = -1 * 0.5 * 2 + 1;
+    // raycaster.setFromCamera(pointer,camera);
+    // const intersects = raycaster.intersectObjects(playerMeshes,true);
+    // console.log(intersects);
 }
 
 function render(){
