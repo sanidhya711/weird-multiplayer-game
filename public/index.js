@@ -2,8 +2,7 @@ import * as THREE from 'https://unpkg.com/three@0.127.0/build/three.module.js';
 import { PointerLockControls } from 'https://unpkg.com/three@0.127.0/examples/jsm/controls/PointerLockControls.js';
 import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/FBXLoader';
 
-const socket = io();
-
+var socket;
 var players = {};
 var playerMeshes = [];
 
@@ -11,9 +10,13 @@ var moveSpeed = 0.7;
 
 var scene,camera,renderer,controls,clock,raycaster;
 
+var archerGlobal,idleGlobal,walkGlobal,jumpGlobal,crouchGlobal,standGlobal;
+
 var fontGlobal,textMaterial,previousText,textMesh;
 
 var jumpAnimationRunning = false, crouched = false;
+
+var numberOfAnimationLoaded = 0;
 
 var keyboard = {
     w:false,
@@ -43,6 +46,70 @@ function init(){
         fontGlobal = font;
         textMaterial = new THREE.MeshBasicMaterial({side:THREE.DoubleSide,color:'green'});
     });
+
+    loadModelsAndAnimations();
+}
+
+function loadModelsAndAnimations(){
+
+    var modelAndAnimationLoader = new FBXLoader();
+
+    //main model
+    modelAndAnimationLoader.load("/characters/erika_archer.fbx",(archer)=>{
+        archer.scale.setScalar(0.1);
+        archerGlobal = archer;
+        numberOfAnimationLoaded++;
+        checkIfAllLoaded();
+    });
+
+    //walk
+    modelAndAnimationLoader.load("/animations/Standard Walk.fbx",(anim)=>{
+        console.log("walk animation loaded");
+        walkGlobal = anim;
+        numberOfAnimationLoaded++;
+        checkIfAllLoaded();
+    });
+
+    //idle
+    modelAndAnimationLoader.load("/animations/idle.fbx",(anim)=>{
+        console.log("idle animation loaded");
+        idleGlobal = anim;
+        numberOfAnimationLoaded++;
+        checkIfAllLoaded();
+    });
+
+    //jump
+    modelAndAnimationLoader.load("/animations/jumping.fbx",(anim)=>{
+        console.log("jumping animation loaded");
+        jumpGlobal = anim;
+        numberOfAnimationLoaded++;
+        checkIfAllLoaded();
+    });
+
+    //stand to crouch
+    modelAndAnimationLoader.load("/animations/Standing to Crouch.fbx",(anim)=>{
+        console.log("crouching animation loaded");
+        crouchGlobal = anim;
+        numberOfAnimationLoaded++;
+        checkIfAllLoaded();
+    });
+
+    //crouch to stand
+    modelAndAnimationLoader.load("/animations/Crouch to Standing.fbx",(anim)=>{
+        console.log("crouching animation loaded");
+        standGlobal = anim;
+        numberOfAnimationLoaded++;
+        checkIfAllLoaded();
+    });
+
+    function checkIfAllLoaded(){
+        if(numberOfAnimationLoaded == 6){
+            socket = io();
+            initializeSockets();
+            document.querySelector(".loader").remove();
+            render();
+        }
+    }
 }
 
 function addFloor(){
@@ -171,49 +238,31 @@ document.addEventListener("click",()=>{
 class Player{
     constructor(position,rotation,username){
         this.loader = new FBXLoader();
-        this.loader.load("/characters/erika_archer.fbx",(archer)=>{
-            this.archer = archer;
-            this.archer.scale.setScalar(0.1);
-            this.archer.position.copy(position);
-            this.archer.position.y = 0;
-            this.archer.rotation.copy(rotation);
-            scene.add(this.archer);
-            playerMeshes.push(this.archer);
-            this.archer.name = username;
-            this.animLoader = new FBXLoader();
-            this.mixer = new THREE.AnimationMixer(archer);
-            //walk
-            this.animLoader.load("/animations/Standard Walk.fbx",(anim)=>{
-                console.log("walk animation loaded");
-                this.walk = this.mixer.clipAction(anim.animations[0]);
-            });
-            //idle
-            this.animLoader.load("/animations/idle.fbx",(anim)=>{
-                console.log("idle animation loaded");
-                this.idle = this.mixer.clipAction(anim.animations[0]);
-                this.idle.play();
-            });
-
-            this.animLoader.load("/animations/jumping.fbx",(anim)=>{
-                console.log("jumping animation loaded");
-                this.jump = this.mixer.clipAction(anim.animations[0]);
-                this.jump.loop = THREE.LoopOnce;
-            });
-
-            this.animLoader.load("/animations/Standing to Crouch.fbx",(anim)=>{
-                console.log("crouching animation loaded");
-                this.crouch = this.mixer.clipAction(anim.animations[0]);
-                this.crouch.loop = THREE.LoopOnce;
-                this.crouch.clampWhenFinished = true;
-            });
-
-            this.animLoader.load("/animations/Crouch to Standing.fbx",(anim)=>{
-                console.log("crouching animation loaded");
-                this.stand = this.mixer.clipAction(anim.animations[0]);
-                this.stand.loop = THREE.LoopOnce;
-                this.stand.clampWhenFinished = true;
-            });
-        });
+        this.archer = archerGlobal;
+        this.archer.position.copy(position);
+        this.archer.position.y = 0;
+        this.archer.rotation.copy(rotation);
+        scene.add(this.archer);
+        playerMeshes.push(this.archer);
+        this.archer.name = username;
+        this.animLoader = new FBXLoader();
+        this.mixer = new THREE.AnimationMixer(this.archer);
+        //walk
+        this.walk = this.mixer.clipAction(walkGlobal.animations[0]);
+        //idle
+        this.idle = this.mixer.clipAction(idleGlobal.animations[0]);
+        this.idle.play();
+        //jump
+        this.jump = this.mixer.clipAction(jumpGlobal.animations[0]);
+        this.jump.loop = THREE.LoopOnce;
+        //standing to crouch
+        this.crouch = this.mixer.clipAction(crouchGlobal.animations[0]);
+        this.crouch.loop = THREE.LoopOnce;
+        this.crouch.clampWhenFinished = true;
+        //crouch to stand
+        this.stand = this.mixer.clipAction(standGlobal.animations[0]);
+        this.stand.loop = THREE.LoopOnce;
+        this.stand.clampWhenFinished = true;
     }
 
     copy(data){
@@ -264,48 +313,45 @@ class Player{
     }
 }
 
-init();
-addFloor();
-addLights();
-render();
-
-socket.on('new player joined',(data)=>{
-    players[data.username] = new Player(new THREE.Vector3(), new THREE.Euler(),data.username);
-});
-
-socket.on('player disconnected',(data)=>{
-    players[data.username].remove();
-    delete players[data.username];
-
-    playerMeshes.forEach((playerMesh)=>{
-        if(playerMesh.name == data.username){
-            var index = playerMeshes.indexOf(playerMesh);
-            playerMeshes.splice(index,1);
+function initializeSockets(){
+    socket.on('new player joined',(data)=>{
+        players[data.username] = new Player(new THREE.Vector3(), new THREE.Euler(),data.username);
+    });
+    
+    socket.on('player disconnected',(data)=>{
+        players[data.username].remove();
+        delete players[data.username];
+    
+        playerMeshes.forEach((playerMesh)=>{
+            if(playerMesh.name == data.username){
+                var index = playerMeshes.indexOf(playerMesh);
+                playerMeshes.splice(index,1);
+            }
+        });
+    });
+    
+    socket.on('tick',(data)=>{
+        players[data.username].copy(data);
+    });
+    
+    socket.on("starting positions",(data)=>{
+        for(const player in data){
+            players[data[player].username] = new Player(data[player].position,data[player].rotation,data[player].username);
         }
     });
-});
-
-socket.on('tick',(data)=>{
-    players[data.username].copy(data);
-});
-
-socket.on("starting positions",(data)=>{
-    for(const player in data){
-        players[data[player].username] = new Player(data[player].position,data[player].rotation,data[player].username);
-    }
-});
-
-socket.on("jumped",(data)=>{
-    players[data.username].jumped();
-});
-
-socket.on("crouched",(data)=>{
-    players[data.username].crouched();
-});
-
-socket.on("stood",(data)=>{
-    players[data.username].stood();
-});
+    
+    socket.on("jumped",(data)=>{
+        players[data.username].jumped();
+    });
+    
+    socket.on("crouched",(data)=>{
+        players[data.username].crouched();
+    });
+    
+    socket.on("stood",(data)=>{
+        players[data.username].stood();
+    });
+}
 
 function resize(){
     renderer.setSize(window.innerWidth,window.innerHeight);
@@ -314,3 +360,7 @@ function resize(){
 }
 
 window.addEventListener("resize",resize);
+
+init();
+addFloor();
+addLights();
