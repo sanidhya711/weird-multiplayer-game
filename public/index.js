@@ -164,7 +164,7 @@ class Player{
                 this.walk = this.mixer.clipAction(anim.animations[0]);
             });
             //idle
-            this.animLoader.load("idle.fbx",(anim)=>{
+            this.animLoader.load("/idle.fbx",(anim)=>{
                 console.log("idle animation loaded");
                 this.idle = this.mixer.clipAction(anim.animations[0]);
                 this.idle.play();
