@@ -3,12 +3,15 @@ import { PointerLockControls } from 'https://unpkg.com/three@0.127.0/examples/js
 import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/FBXLoader';
 
 const socket = io();
+
 var players = {};
 var playerMeshes = [];
 
 var moveSpeed = 0.7;
 
 var scene,camera,renderer,controls,clock,raycaster;
+
+var fontGlobal,textMaterial,previousText,textMesh;
 
 var keyboard = {
     w:false,
@@ -26,20 +29,32 @@ function init(){
     renderer.setClearColor(0x0000FF);
     document.body.appendChild(renderer.domElement);
     scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x000000,500,1000);
     controls = new PointerLockControls(camera,document.body);
-    controls.maxPolarAngle = Math.PI/2 + 0.2;
-    controls.minPolarAngle = Math.PI/2 - 0.2;
+    // controls.maxPolarAngle = Math.PI/2 + 0.2;
+    // controls.minPolarAngle = Math.PI/2 - 0.2;
     raycaster = new THREE.Raycaster();
-    // raycaster.layers.set(20);
     clock = new THREE.Clock();
+
+    const fontLoader = new THREE.FontLoader();
+    fontLoader.load('Lato/Lato_Regular.json',function(font){
+        fontGlobal = font;
+        textMaterial = new THREE.MeshBasicMaterial({side:THREE.DoubleSide,color:'green'});
+    });
 }
 
 function addFloor(){
-    var floorGeometry = new THREE.PlaneGeometry(1000,1090);
-    var floorMaterial = new THREE.MeshBasicMaterial({side:THREE.DoubleSide,color:0xFF00FF});
-    var floor = new THREE.Mesh(floorGeometry,floorMaterial);
-    floor.rotation.x = Math.PI/2;
-    scene.add(floor);
+    var textureLoader = new THREE.TextureLoader();
+    textureLoader.load("/floor.jpg",(floorTexture)=>{
+        floorTexture.wrapS = THREE.RepeatWrapping;
+        floorTexture.wrapT = THREE.RepeatWrapping;
+        floorTexture.repeat.set(70,70);
+        var floorGeometry = new THREE.PlaneGeometry(1000,1000);
+        var floorMaterial = new THREE.MeshBasicMaterial({side:THREE.DoubleSide,map:floorTexture});
+        var floor = new THREE.Mesh(floorGeometry,floorMaterial);
+        floor.rotation.x = Math.PI/2;
+        scene.add(floor);
+    });
 }
 
 function addLights(){
@@ -63,12 +78,42 @@ function moveHandler(){
 }
 
 function handleRaycaster(){
-    // const pointer = new THREE.Vector2();
-    // pointer.x = 0.5 * 2 - 1;
-	// pointer.y = -1 * 0.5 * 2 + 1;
-    // raycaster.setFromCamera(pointer,camera);
-    // const intersects = raycaster.intersectObjects(playerMeshes,true);
-    // console.log(intersects);
+    const pointer = new THREE.Vector2();
+    pointer.x = 0.5 * 2 - 1;
+	pointer.y = -1 * 0.5 * 2 + 1;
+    raycaster.setFromCamera(pointer,camera);
+    const intersects = raycaster.intersectObjects(playerMeshes,true)[0];
+    if(intersects && intersects.distance < 50){
+        var parent = intersects.object;
+        while(parent.parent && !parent.parent.autoUpdate){
+            parent = parent.parent;
+        }   
+
+        var username = parent.name;
+        username = username.toString();
+
+        if(previousText == username){
+            textMesh.visible = true;
+        }else{
+            const textGeometry = new THREE.TextGeometry(username,{
+                font: fontGlobal,
+                size: 2.5,
+                height: 0.125,
+            });
+            scene.remove(textMesh);
+            textMesh = new THREE.Mesh(textGeometry,textMaterial);
+            scene.add(textMesh);
+        }
+        textMesh.position.copy(parent.position);
+        textMesh.position.y = 20;
+        textMesh.lookAt(camera.position);
+        textMesh.translateX(-2.2);
+        previousText = username;
+    }else{
+        if(textMesh){
+            textMesh.visible = false;
+        }
+    }
 }
 
 function render(){
@@ -100,7 +145,7 @@ document.addEventListener("click",()=>{
 });
 
 class Player{
-    constructor(position,rotation){
+    constructor(position,rotation,username){
         this.loader = new FBXLoader();
         this.loader.load("/erika_archer.fbx",(archer)=>{
             this.archer = archer;
@@ -110,7 +155,7 @@ class Player{
             this.archer.rotation.copy(rotation);
             scene.add(this.archer);
             playerMeshes.push(this.archer);
-
+            this.archer.name = username;
             this.animLoader = new FBXLoader();
             this.mixer = new THREE.AnimationMixer(archer);
             //walk
@@ -127,19 +172,18 @@ class Player{
 
     copy(data){
         if(this.archer){
-        //     data.position.y = 0;
-        //     if(!this.archer.position.equals(data.position)){
-        //         if(this.walk && this.idle){
-        //             this.idle.crossFadeFrom(this.walk,1);
-        //             this.idle.play();
-        //         }
-                
-        //     }else{
-        //         if(this.walk && this.idle){
-        //             this.walk.crossFadeFrom(this.idle,1);
-        //             this.walk.play();
-        //         }
-        //     }
+            data.position.y = 0;
+            if(!this.archer.position.equals(data.position)){
+                if(this.walk && this.idle){
+                    this.walk.play()
+                    this.idle.stop();
+                }
+            }else{
+                if(this.walk && this.idle){
+                    this.walk.stop();
+                    this.idle.play();
+                }
+            }
             this.archer.position.copy(data.position);
             this.archer.rotation.copy(data.rotation);
             this.archer.position.y = 0;
@@ -164,12 +208,19 @@ addLights();
 render();
 
 socket.on('new player joined',(data)=>{
-    players[data.username] = new Player(new THREE.Vector3(), new THREE.Euler());
+    players[data.username] = new Player(new THREE.Vector3(), new THREE.Euler(),data.username);
 });
 
 socket.on('player disconnected',(data)=>{
     players[data.username].remove();
     delete players[data.username];
+
+    playerMeshes.forEach((playerMesh)=>{
+        if(playerMesh.name == data.username){
+            var index = playerMeshes.indexOf(playerMesh);
+            playerMeshes.splice(index,1);
+        }
+    });
 });
 
 socket.on('tick',(data)=>{
@@ -178,7 +229,7 @@ socket.on('tick',(data)=>{
 
 socket.on("starting positions",(data)=>{
     for(const player in data){
-        players[data[player].username] = new Player(data[player].position,data[player].rotation);
+        players[data[player].username] = new Player(data[player].position,data[player].rotation,data[player].username);
     }
 });
 
