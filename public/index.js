@@ -160,10 +160,12 @@ class Player{
             this.mixer = new THREE.AnimationMixer(archer);
             //walk
             this.animLoader.load("Standard Walk.fbx",(anim)=>{
+                console.log("walk animation loaded");
                 this.walk = this.mixer.clipAction(anim.animations[0]);
             });
             //idle
             this.animLoader.load("idle.fbx",(anim)=>{
+                console.log("idle animation loaded");
                 this.idle = this.mixer.clipAction(anim.animations[0]);
                 this.idle.play();
             });
