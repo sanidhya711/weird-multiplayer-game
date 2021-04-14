@@ -147,7 +147,7 @@ document.addEventListener("click",()=>{
 class Player{
     constructor(position,rotation,username){
         this.loader = new FBXLoader();
-        this.loader.load("/erika_archer.fbx",(archer)=>{
+        this.loader.load("/characters/erika_archer.fbx",(archer)=>{
             this.archer = archer;
             this.archer.scale.setScalar(0.1);
             this.archer.position.copy(position);
@@ -159,12 +159,12 @@ class Player{
             this.animLoader = new FBXLoader();
             this.mixer = new THREE.AnimationMixer(archer);
             //walk
-            this.animLoader.load("Standard Walk.fbx",(anim)=>{
+            this.animLoader.load("/animations/Standard Walk.fbx",(anim)=>{
                 console.log("walk animation loaded");
                 this.walk = this.mixer.clipAction(anim.animations[0]);
             });
             //idle
-            this.animLoader.load("/idle.fbx",(anim)=>{
+            this.animLoader.load("/animations/idle.fbx",(anim)=>{
                 console.log("idle animation loaded");
                 this.idle = this.mixer.clipAction(anim.animations[0]);
                 this.idle.play();
