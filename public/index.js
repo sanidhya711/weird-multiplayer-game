@@ -55,7 +55,8 @@ function loadModelsAndAnimations(){
     var modelAndAnimationLoader = new FBXLoader();
 
     //main model
-    modelAndAnimationLoader.load("/characters/erika_archer.fbx",(archer)=>{
+    modelAndAnimationLoader.load("https://raw.githubusercontent.com/sanidhya711/weird-multiplayer-game/master/public/characters/erika_archer.fbx",(archer)=>{
+        console.log("loaded a model");
         archer.scale.setScalar(0.1);
         archerGlobal = archer;
         numberOfAnimationLoaded++;
@@ -63,7 +64,7 @@ function loadModelsAndAnimations(){
     });
 
     //walk
-    modelAndAnimationLoader.load("/animations/Standard Walk.fbx",(anim)=>{
+    modelAndAnimationLoader.load("https://raw.githubusercontent.com/sanidhya711/weird-multiplayer-game/master/public/animations/Standard%20Walk.fbx",(anim)=>{
         console.log("walk animation loaded");
         walkGlobal = anim;
         numberOfAnimationLoaded++;
@@ -71,7 +72,7 @@ function loadModelsAndAnimations(){
     });
 
     //idle
-    modelAndAnimationLoader.load("/animations/idle.fbx",(anim)=>{
+    modelAndAnimationLoader.load("https://raw.githubusercontent.com/sanidhya711/weird-multiplayer-game/master/public/animations/idle.fbx",(anim)=>{
         console.log("idle animation loaded");
         idleGlobal = anim;
         numberOfAnimationLoaded++;
@@ -79,7 +80,7 @@ function loadModelsAndAnimations(){
     });
 
     //jump
-    modelAndAnimationLoader.load("/animations/jumping.fbx",(anim)=>{
+    modelAndAnimationLoader.load("https://raw.githubusercontent.com/sanidhya711/weird-multiplayer-game/master/public/animations/Jumping.fbx",(anim)=>{
         console.log("jumping animation loaded");
         jumpGlobal = anim;
         numberOfAnimationLoaded++;
@@ -87,7 +88,7 @@ function loadModelsAndAnimations(){
     });
 
     //stand to crouch
-    modelAndAnimationLoader.load("/animations/Standing to Crouch.fbx",(anim)=>{
+    modelAndAnimationLoader.load("https://raw.githubusercontent.com/sanidhya711/weird-multiplayer-game/master/public/animations/Standing%20To%20Crouch.fbx",(anim)=>{
         console.log("crouching animation loaded");
         crouchGlobal = anim;
         numberOfAnimationLoaded++;
@@ -95,7 +96,7 @@ function loadModelsAndAnimations(){
     });
 
     //crouch to stand
-    modelAndAnimationLoader.load("/animations/Crouch to Standing.fbx",(anim)=>{
+    modelAndAnimationLoader.load("https://raw.githubusercontent.com/sanidhya711/weird-multiplayer-game/master/public/animations/Crouch%20To%20Standing.fbx",(anim)=>{
         console.log("crouching animation loaded");
         standGlobal = anim;
         numberOfAnimationLoaded++;
@@ -174,9 +175,9 @@ function handleRaycaster(){
             scene.add(textMesh);
         }
         textMesh.position.copy(parent.position);
-        textMesh.position.y = 20;
+        textMesh.position.y = 18;
         textMesh.lookAt(camera.position);
-        textMesh.translateX(-2.2);
+        textMesh.translateX(-2.3);
         previousText = username;
     }else{
         if(textMesh){
