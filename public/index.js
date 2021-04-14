@@ -13,6 +13,8 @@ var scene,camera,renderer,controls,clock,raycaster;
 
 var fontGlobal,textMaterial,previousText,textMesh;
 
+var jumpAnimationRunning = false, crouched = false;
+
 var keyboard = {
     w:false,
     a:false,
@@ -31,8 +33,8 @@ function init(){
     scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x000000,500,1000);
     controls = new PointerLockControls(camera,document.body);
-    // controls.maxPolarAngle = Math.PI/2 + 0.2;
-    // controls.minPolarAngle = Math.PI/2 - 0.2;
+    controls.maxPolarAngle = Math.PI/2 + 0.2;
+    controls.minPolarAngle = Math.PI/2 - 0.2;
     raycaster = new THREE.Raycaster();
     clock = new THREE.Clock();
 
@@ -134,9 +136,31 @@ window.addEventListener("keydown",function(eve){
     if(eve.key=="w" || eve.key == "a" || eve.key=="s" || eve.key=="d"){
         keyboard[eve.key] = true;
     }
+    if(eve.key == " "){
+        if(!jumpAnimationRunning){
+            socket.emit("jump");
+            jumpAnimationRunning = true;
+            setTimeout(() => {
+                jumpAnimationRunning = false;
+            },2000);
+        }
+    }
+    if(eve.key == "Shift"){
+        if(!crouched){
+            crouched = true;
+            socket.emit("crouch");
+        }
+    }
 });
+
 window.addEventListener("keyup",function(eve){
-    keyboard[eve.key] = false;
+    if(eve.key=="w" || eve.key == "a" || eve.key=="s" || eve.key=="d"){
+        keyboard[eve.key] = false;
+    }
+    if(eve.key == "Shift"){
+        crouched = false;
+        socket.emit("stand");
+    }
 });
 
 
@@ -169,6 +193,26 @@ class Player{
                 this.idle = this.mixer.clipAction(anim.animations[0]);
                 this.idle.play();
             });
+
+            this.animLoader.load("/animations/jumping.fbx",(anim)=>{
+                console.log("jumping animation loaded");
+                this.jump = this.mixer.clipAction(anim.animations[0]);
+                this.jump.loop = THREE.LoopOnce;
+            });
+
+            this.animLoader.load("/animations/Standing to Crouch.fbx",(anim)=>{
+                console.log("crouching animation loaded");
+                this.crouch = this.mixer.clipAction(anim.animations[0]);
+                this.crouch.loop = THREE.LoopOnce;
+                this.crouch.clampWhenFinished = true;
+            });
+
+            this.animLoader.load("/animations/Crouch to Standing.fbx",(anim)=>{
+                console.log("crouching animation loaded");
+                this.stand = this.mixer.clipAction(anim.animations[0]);
+                this.stand.loop = THREE.LoopOnce;
+                this.stand.clampWhenFinished = true;
+            });
         });
     }
 
@@ -191,6 +235,22 @@ class Player{
             this.archer.position.y = 0;
             this.archer.rotateY(Math.PI);
         }
+    }
+
+    jumped(){
+        this.jump.stop();
+        this.jump.play();
+    }
+
+    crouched(){
+        this.crouch.stop();
+        this.crouch.play();
+    }
+
+    stood(){
+        this.crouch.stop();
+        this.stand.stop();
+        this.stand.play();
     }
 
     update(delta){
@@ -233,6 +293,18 @@ socket.on("starting positions",(data)=>{
     for(const player in data){
         players[data[player].username] = new Player(data[player].position,data[player].rotation,data[player].username);
     }
+});
+
+socket.on("jumped",(data)=>{
+    players[data.username].jumped();
+});
+
+socket.on("crouched",(data)=>{
+    players[data.username].crouched();
+});
+
+socket.on("stood",(data)=>{
+    players[data.username].stood();
 });
 
 function resize(){

@@ -26,6 +26,18 @@ io.on('connection', socket => {
         }
     });
 
+    socket.on("jump",()=>{
+        socket.broadcast.emit("jumped",{username:socket.username});
+    });
+
+    socket.on("crouch",()=>{
+        socket.broadcast.emit("crouched",{username:socket.username});
+    });
+
+    socket.on("stand",()=>{
+        socket.broadcast.emit("stood",{username:socket.username});
+    });
+
     socket.on('disconnect',() => {
         socket.broadcast.emit("player disconnected",{username:socket.username});
         delete players[socket.username];
@@ -38,6 +50,6 @@ app.get("/",(req,res)=>{
     res.sendFile(__dirname+"/index.html");
 });
 
-server.listen(process.env.PORT,()=>{
+server.listen(3000,()=>{
     console.log("server started on port "+process.env.PORT);
 });
