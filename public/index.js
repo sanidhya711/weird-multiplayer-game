@@ -2,7 +2,8 @@ import * as THREE from 'https://unpkg.com/three@0.127.0/build/three.module.js';
 import { PointerLockControls } from 'https://unpkg.com/three@0.127.0/examples/jsm/controls/PointerLockControls.js';
 import { FBXLoader } from 'https://unpkg.com/three@0.127.0/examples/jsm/loaders/FBXLoader';
 
-var socket;
+var username;
+var socket = io();
 var players = {};
 var playerMeshes = [];
 
@@ -103,12 +104,23 @@ function loadModelsAndAnimations(){
         checkIfAllLoaded();
     });
 
+    document.querySelector("button").addEventListener("click",()=>{
+        username = document.querySelector(".username").value;
+        document.querySelector(".username").remove();
+        document.querySelector("button").remove();
+        checkIfAllLoaded();
+    });
+
     function checkIfAllLoaded(){
-        if(numberOfAnimationLoaded == 6){
-            socket = io();
+        if(numberOfAnimationLoaded == 6 && username){
             initializeSockets();
+            render();          
+            document.addEventListener("click",()=>{
+                controls.lock();
+            });
+        }
+        if(numberOfAnimationLoaded == 6 && document.querySelector(".loader")){
             document.querySelector(".loader").remove();
-            render();
         }
     }
 }
@@ -152,7 +164,7 @@ function handleRaycaster(){
     pointer.x = 0.5 * 2 - 1;
 	pointer.y = -1 * 0.5 * 2 + 1;
     raycaster.setFromCamera(pointer,camera);
-    const intersects = raycaster.intersectObjects(playerMeshes,true)[0];
+    const intersects = raycaster.intersectObjects(playerMeshes)[0];
     if(intersects && intersects.distance < 50){
         var parent = intersects.object;
         while(parent.parent && !parent.parent.autoUpdate){
@@ -167,17 +179,17 @@ function handleRaycaster(){
         }else{
             const textGeometry = new THREE.TextGeometry(username,{
                 font: fontGlobal,
-                size: 2.5,
-                height: 0.125,
+                size: 2,
+                height: 0.1,
             });
             scene.remove(textMesh);
+            textGeometry.center();
             textMesh = new THREE.Mesh(textGeometry,textMaterial);
             scene.add(textMesh);
         }
         textMesh.position.copy(parent.position);
-        textMesh.position.y = 18;
+        textMesh.position.y = 19;
         textMesh.lookAt(camera.position);
-        textMesh.translateX(-2.3);
         previousText = username;
     }else{
         if(textMesh){
@@ -231,11 +243,6 @@ window.addEventListener("keyup",function(eve){
     }
 });
 
-
-document.addEventListener("click",()=>{
-    controls.lock();
-});
-
 class Player{
     constructor(position,rotation,username){
         this.loader = new FBXLoader();
@@ -244,7 +251,7 @@ class Player{
         this.archer.position.y = 0;
         this.archer.rotation.copy(rotation);
         scene.add(this.archer);
-        playerMeshes.push(this.archer);
+        playerMeshes.push(this.archer.children[2].children[0]);
         this.archer.name = username;
         this.animLoader = new FBXLoader();
         this.mixer = new THREE.AnimationMixer(this.archer);
@@ -315,6 +322,9 @@ class Player{
 }
 
 function initializeSockets(){
+
+    socket.emit("joined",{username:username});
+
     socket.on('new player joined',(data)=>{
         players[data.username] = new Player(new THREE.Vector3(), new THREE.Euler(),data.username);
     });

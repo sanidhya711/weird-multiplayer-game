@@ -3,19 +3,17 @@ const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 
-var usernames = 1;
 var players = {};
 
 app.use(express.static("public"));
 
 io.on('connection', socket => {
 
-    socket.emit("starting positions",players);
-
-    socket.username = usernames;
-    usernames++;
-
-    socket.broadcast.emit("new player joined",{username:socket.username});
+    socket.on("joined",(data)=>{
+        socket.emit("starting positions",players);
+        socket.username = data.username;
+        socket.broadcast.emit("new player joined",{username:data.username});
+    });
 
     socket.on('tick',(data)=>{
         socket.broadcast.emit("tick",{position:data.position,rotation:data.rotation,username:socket.username});
