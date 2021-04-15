@@ -5,9 +5,22 @@ const io = require('socket.io')(server);
 
 var players = {};
 
+var timerStart,timerEnd,ping;
+
 app.use(express.static("public"));
 
 io.on('connection', socket => {
+
+    setInterval(() => {
+        timerStart =  Date.now();
+        socket.emit("ping");
+    },5000);
+
+    socket.on("pong",()=>{
+        timerEnd = Date.now();
+        ping = Math.round((timerEnd - timerStart)/2);
+        socket.emit("ping is maru maru",{ping:ping});
+    });
 
     socket.on("joined",(data)=>{
         socket.emit("starting positions",players);

@@ -388,3 +388,11 @@ function log(message){
         span.remove();
     },5000);
 }
+
+socket.on("ping",()=>{
+    socket.emit("pong");
+});
+
+socket.on("ping is maru maru",(data)=>{
+    log("ping: "+data.ping+"ms");
+});
