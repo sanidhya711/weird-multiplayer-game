@@ -166,12 +166,7 @@ function handleRaycaster(){
     raycaster.setFromCamera(pointer,camera);
     const intersects = raycaster.intersectObjects(playerMeshes)[0];
     if(intersects && intersects.distance < 50){
-        var parent = intersects.object;
-        while(parent.parent && !parent.parent.autoUpdate){
-            parent = parent.parent;
-        }   
-
-        var username = parent.name;
+        var username = intersects.object.name;
         username = username.toString();
 
         if(previousText == username){
@@ -187,7 +182,7 @@ function handleRaycaster(){
             textMesh = new THREE.Mesh(textGeometry,textMaterial);
             scene.add(textMesh);
         }
-        textMesh.position.copy(parent.position);
+        textMesh.position.copy(players[username].position);
         textMesh.position.y = 19;
         textMesh.lookAt(camera.position);
         previousText = username;
@@ -251,8 +246,8 @@ class Player{
         this.archer.position.y = 0;
         this.archer.rotation.copy(rotation);
         scene.add(this.archer);
+        this.archer.children[2].children[0].name = username;
         playerMeshes.push(this.archer.children[2].children[0]);
-        this.archer.name = username;
         this.animLoader = new FBXLoader();
         this.mixer = new THREE.AnimationMixer(this.archer);
         //walk
@@ -271,6 +266,10 @@ class Player{
         this.stand = this.mixer.clipAction(standGlobal.animations[0]);
         this.stand.loop = THREE.LoopOnce;
         this.stand.clampWhenFinished = true;
+    }
+
+    get position(){
+        return this.archer.position;
     }
 
     copy(data){
@@ -300,13 +299,14 @@ class Player{
     }
 
     crouched(){
+        this.stand.stop();
         this.crouch.stop();
         this.crouch.play();
     }
 
     stood(){
         this.crouch.stop();
-        this.stand.stop();
+        this.stand.stop()
         this.stand.play();
     }
 
@@ -348,6 +348,7 @@ function initializeSockets(){
     });
     
     socket.on("starting positions",(data)=>{
+        log("sucessfully connected to server");
         for(const player in data){
             players[data[player].username] = new Player(data[player].position,data[player].rotation,data[player].username);
         }
@@ -381,6 +382,9 @@ addLights();
 function log(message){
     var span = document.createElement("span");
     span.innerText = message;
+    span.className = "start-animation";
     document.querySelector(".console").appendChild(span);
-    span.className = "start-animation"
+    setTimeout(() => {
+        span.remove();
+    },5000);
 }

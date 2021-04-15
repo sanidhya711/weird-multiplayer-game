@@ -33,9 +33,9 @@ body{
 button{
     position: absolute;
     top: 100px;
-    left: calc(50vw + 175px);
+    left: calc(50vw + 165px);
     font-size: 21px;
-    width: 100px;
+    width: 75px;
 }
 .console{
     position: absolute;
@@ -51,11 +51,12 @@ button{
 }
 .start-animation{
     animation-name: disappear;
-    animation-duration: 1s;
+    animation-duration: 2s;
+    animation-delay: 3.5s;
     animation-fill-mode: forwards;
     opacity: 100%;
 }
-@keyframes disappear{
-    0%{opacity: 100%};
-    100%{opacity: 0%};
+@keyframes  disappear {
+    0% { opacity: 100%; }
+    100% { opacity: 0%; }
 }
