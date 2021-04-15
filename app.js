@@ -4,28 +4,33 @@ const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 
 var players = {};
-
-var timerStart,timerEnd,ping;
+var ping = {};
 
 app.use(express.static("public"));
 
 io.on('connection', socket => {
 
-    setInterval(() => {
-        timerStart =  Date.now();
-        socket.emit("ping");
-    },5000);
-
     socket.on("pong",()=>{
-        timerEnd = Date.now();
-        ping = Math.round((timerEnd - timerStart)/2);
-        socket.emit("ping is maru maru",{ping:ping});
+        ping[socket.username].timerEnd = Date.now();
+        ping[socket.username].ping = Math.round((ping[socket.username].timerEnd - ping[socket.username].timerStart)/2);
+        socket.emit("ping is maru maru",{ping:ping[socket.username].ping});
     });
 
     socket.on("joined",(data)=>{
         socket.emit("starting positions",players);
         socket.username = data.username;
+        ping[socket.username] = {
+            timerStart: null,
+            timerEnd: null,
+            ping: null
+        }
         socket.broadcast.emit("new player joined",{username:data.username});
+        ping[socket.username].timerStart =  Date.now();
+        socket.emit("ping");
+        setInterval(() => {
+            ping[socket.username].timerStart =  Date.now();
+            socket.emit("ping");
+        },5000);
     });
 
     socket.on('tick',(data)=>{
@@ -52,6 +57,7 @@ io.on('connection', socket => {
     socket.on('disconnect',() => {
         socket.broadcast.emit("player disconnected",{username:socket.username});
         delete players[socket.username];
+        delete ping[socket.username];
     });
 
 });
