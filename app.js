@@ -61,6 +61,6 @@ app.get("/",(req,res)=>{
     res.sendFile(__dirname+"/index.html");
 });
 
-server.listen(process.env.PORT,()=>{
-    console.log("server started on port "+process.env.PORT);
+server.listen(3000,()=>{
+    console.log("server running");
 });

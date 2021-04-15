@@ -32,7 +32,7 @@ function init(){
     camera.position.y = 16;
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth,window.innerHeight);
-    renderer.setClearColor(0x0000FF);
+    // renderer.setClearColor(0x0000FF);
     document.body.appendChild(renderer.domElement);
     scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x000000,500,1000);
@@ -394,5 +394,13 @@ socket.on("ping",()=>{
 });
 
 socket.on("ping is maru maru",(data)=>{
-    log("ping: "+data.ping+"ms");
+    var color;
+    if(data.ping <= 100){
+        color = "green";
+    }else if(data.ping < 300){
+        color = "yellow";
+    }else{
+        color = "red";
+    }
+    document.querySelector(".ping").innerHTML =`ping: <span style='color:${color}'>${data.ping}ms</span>`;
 });
