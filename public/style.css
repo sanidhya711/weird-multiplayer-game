@@ -1,5 +1,6 @@
 body{
     margin: 0;
+    overflow: hidden;
 }
 .loader {
     border: 16px solid #f3f3f3;

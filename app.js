@@ -27,9 +27,13 @@ io.on('connection', socket => {
         socket.broadcast.emit("new player joined",{username:data.username});
         ping[socket.username].timerStart =  Date.now();
         socket.emit("ping");
-        setInterval(() => {
-            ping[socket.username].timerStart =  Date.now();
-            socket.emit("ping");
+        var pingInterval = setInterval(() => {
+            if(ping[socket.username]){
+                ping[socket.username].timerStart =  Date.now();
+                socket.emit("ping");
+            }else{
+                clearInterval(pingInterval);
+            }
         },5000);
     });
 
@@ -67,6 +71,6 @@ app.get("/",(req,res)=>{
     res.sendFile(__dirname+"/index.html");
 });
 
-server.listen(process.env.PORT,()=>{
+server.listen(3000,()=>{
     console.log("server running");
 });

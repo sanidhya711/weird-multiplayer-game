@@ -32,10 +32,10 @@ function init(){
     camera.position.y = 16;
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth,window.innerHeight);
-    // renderer.setClearColor(0x0000FF);
+    renderer.setClearColor(new THREE.Color("#333"));
     document.body.appendChild(renderer.domElement);
     scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x000000,500,1000);
+    scene.fog = new THREE.Fog(new THREE.Color("#333"),100,5000);
     controls = new PointerLockControls(camera,document.body);
     controls.maxPolarAngle = Math.PI/2 + 0.2;
     controls.minPolarAngle = Math.PI/2 - 0.2;
